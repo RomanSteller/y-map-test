@@ -50,6 +50,21 @@ class OrganizationParsingTest extends TestCase
             ->assertJsonValidationErrors(['url']);
     }
 
+    public function test_saving_an_already_added_organization_is_rejected(): void
+    {
+        $this->actingUser();
+        $url = 'https://yandex.ru/maps/org/twins_garden/192990200894/reviews/';
+
+        $this->postJson('/api/organizations', ['url' => $url])->assertCreated();
+
+        // Та же организация во второй раз — ошибка, дубль не создаётся.
+        $this->postJson('/api/organizations', ['url' => $url])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['url']);
+
+        $this->assertSame(1, Organization::count());
+    }
+
     public function test_parsing_stores_reviews_counts_and_rating(): void
     {
         // В тестах очередь синхронная, так что POST реально парсит через фикстуру.

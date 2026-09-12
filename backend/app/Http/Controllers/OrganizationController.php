@@ -10,6 +10,7 @@ use App\Models\Organization;
 use App\Services\Yandex\YandexUrl;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Validation\ValidationException;
 
 class OrganizationController extends Controller
 {
@@ -26,25 +27,30 @@ class OrganizationController extends Controller
     /**
      * Сохраняет ссылку с экрана настроек и запускает парсинг.
      *
-     * Идемпотентно по задумке: если вставить ту же организацию ещё раз, мы
-     * обновим существующую запись (и перепарсим), а не создадим дубль.
+     * Добавляем только новую организацию: если такая уже есть, отдаём ошибку —
+     * перепарсить существующую можно кнопкой «Обновить» на её странице.
      */
     public function store(SaveOrganizationRequest $request): JsonResponse
     {
         $parsed = YandexUrl::parse($request->validated('url'));
 
         // У коротких ссылок id ещё нет — такие строки ключуем по нормализованному URL.
-        $attributes = $parsed->orgId !== null
-            ? ['yandex_id' => $parsed->orgId]
-            : ['yandex_id' => 'url:'.sha1($parsed->normalized)];
+        $yandexId = $parsed->orgId ?? 'url:'.sha1($parsed->normalized);
 
-        $organization = Organization::updateOrCreate($attributes, [
+        // Уже добавляли эту организацию? Не плодим дубли — говорим об этом прямо.
+        $existing = Organization::where('yandex_id', $yandexId)->first();
+        if ($existing !== null) {
+            throw ValidationException::withMessages([
+                'url' => 'Эта организация уже добавлена — она есть в списке ниже.',
+            ]);
+        }
+
+        $organization = Organization::create([
+            'yandex_id' => $yandexId,
             'url' => $parsed->normalized,
             'slug' => $parsed->slug,
             'parse_status' => Organization::STATUS_QUEUED,
             'parse_progress' => 0,
-            'parse_error' => null,
-            'parse_error_reason' => null,
         ]);
 
         ParseOrganizationReviews::dispatch($organization->id);
