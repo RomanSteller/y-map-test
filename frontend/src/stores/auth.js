@@ -4,11 +4,11 @@ import http, { ensureCsrfCookie } from '../api/http'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
-  const ready = ref(false) // whether we've checked the session at least once
+  const ready = ref(false) // проверили ли мы сессию хотя бы раз
 
   const isAuthenticated = computed(() => user.value !== null)
 
-  /** Restore the session on app boot (page reload keeps the cookie). */
+  /** Восстанавливаем сессию при старте приложения (перезагрузка не теряет куку). */
   async function fetchUser() {
     try {
       const { data } = await http.get('/api/user')

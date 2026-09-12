@@ -32,7 +32,7 @@ const router = createRouter({
 router.beforeEach(async (to) => {
   const auth = useAuthStore()
 
-  // Make sure we know the auth state before guarding the first navigation.
+  // Прежде чем охранять первый переход, убедимся, что знаем состояние авторизации.
   if (!auth.ready) {
     await auth.fetchUser()
   }

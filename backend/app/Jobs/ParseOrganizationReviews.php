@@ -13,23 +13,23 @@ use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
- * Parses one organisation in the background. This is deliberately a queued job
- * and not something done inside the HTTP request: pulling up to ~600 reviews
- * (and, at the scale the spec describes, ~50 branches at once) is far too slow
- * and fragile to hold a web request open for. The controller just dispatches
- * this and returns immediately; the UI polls the organisation's status.
+ * Парсит одну организацию в фоне. Это намеренно джоба в очереди, а не работа
+ * внутри HTTP-запроса: вытянуть до ~600 отзывов (а в масштабе из ТЗ — ~50
+ * филиалов разом) слишком долго и хрупко, чтобы держать ради этого открытым
+ * веб-запрос. Контроллер просто ставит джобу и сразу отвечает, а интерфейс
+ * опрашивает статус организации.
  */
 class ParseOrganizationReviews implements ShouldQueue
 {
     use Queueable;
 
-    /** Retry a few times — network blips and soft anti-bot walls are transient. */
+    /** Пробуем несколько раз — сетевые сбои и мягкий антибот обычно временные. */
     public int $tries = 3;
 
-    /** Exponential-ish backoff between attempts (seconds). */
+    /** Паузы между попытками (сек), нарастающие. */
     public array $backoff = [30, 120, 300];
 
-    /** A full ~600-review pull with polite pauses can take minutes. */
+    /** Полный сбор ~600 отзывов с вежливыми паузами может занять минуты. */
     public int $timeout = 900;
 
     public function __construct(public int $organizationId)
@@ -54,7 +54,7 @@ class ParseOrganizationReviews implements ShouldQueue
             $url = YandexUrl::parse($organization->url);
 
             $data = $parser->parse($url, function (int $progress, string $message) use ($organization) {
-                // Persist progress so the polling endpoint can report it.
+                // Сохраняем прогресс, чтобы эндпоинт статуса мог его отдать.
                 $organization->forceFill([
                     'parse_progress' => max(0, min(100, $progress)),
                 ])->save();
@@ -75,7 +75,7 @@ class ParseOrganizationReviews implements ShouldQueue
                 'updated' => $snapshot->reviews_updated,
             ]);
         } catch (ParserException $e) {
-            // A markup change is not worth retrying — fail fast and loudly.
+            // Изменившуюся вёрстку повторять бесполезно — падаем сразу и громко.
             if (! $e->isRetryable()) {
                 $this->markFailed($organization, $e->reason(), $e->getMessage());
                 $this->fail($e);
@@ -83,7 +83,8 @@ class ParseOrganizationReviews implements ShouldQueue
                 return;
             }
 
-            // Retryable: record the reason, then rethrow so the queue retries.
+            // Ошибка из повторяемых: фиксируем причину и пробрасываем дальше,
+            // чтобы очередь сделала ретрай.
             $organization->update([
                 'parse_error_reason' => $e->reason(),
                 'parse_error' => $e->getMessage(),
@@ -93,7 +94,7 @@ class ParseOrganizationReviews implements ShouldQueue
         }
     }
 
-    /** Called by the queue when all retries are exhausted (or on fail()). */
+    /** Очередь зовёт этот метод, когда попытки кончились (или после fail()). */
     public function failed(Throwable $e): void
     {
         $organization = Organization::find($this->organizationId);

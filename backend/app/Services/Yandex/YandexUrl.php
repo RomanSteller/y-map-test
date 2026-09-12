@@ -5,9 +5,9 @@ namespace App\Services\Yandex;
 use App\Services\Yandex\Exceptions\InvalidUrlException;
 
 /**
- * Parses and validates a Yandex.Maps organisation link.
+ * Разбирает и проверяет ссылку на организацию в Яндекс.Картах.
  *
- * Accepts the common shapes, e.g.:
+ * Понимает распространённые варианты, например:
  *   https://yandex.ru/maps/org/twins_garden/192990200894/
  *   https://yandex.ru/maps/org/192990200894/reviews/
  *   https://yandex.com/maps/213/moscow/org/.../192990200894/reviews/
@@ -52,14 +52,14 @@ final class YandexUrl
 
         [$orgId, $slug] = self::extractOrgId($path);
 
-        // A short link (/maps/-/xxxx) is valid but the id is only known after
-        // following the redirect — leave the id null, the scraper resolves it.
+        // Короткая ссылка (/maps/-/xxxx) валидна, но id станет известен только
+        // после перехода по редиректу — оставляем id пустым, его вытянет скрапер.
         $isShort = (bool) preg_match('#/maps/-/[\w-]+#', $path);
         if ($orgId === null && ! $isShort) {
             throw new InvalidUrlException('Не удалось определить организацию в ссылке. Нужна ссылка на карточку организации (…/org/…).');
         }
 
-        // Rebuild a clean canonical URL without tracking query params.
+        // Собираем чистый канонический URL без всякого рекламного мусора в query.
         $normalized = rtrim(sprintf('%s://%s%s', $parts['scheme'], $host, $path), '/');
 
         return new self($normalized, $orgId, $slug);
@@ -79,14 +79,14 @@ final class YandexUrl
     /** @return array{0: ?string, 1: ?string} [orgId, slug] */
     private static function extractOrgId(string $path): array
     {
-        // .../org/<slug>/<digits>  or  .../org/<digits>
+        // .../org/<slug>/<цифры>  либо  .../org/<цифры>
         if (preg_match('#/org/([^/]+)/(\d{6,})#', $path, $m)) {
             return [$m[2], $m[1]];
         }
         if (preg_match('#/org/(\d{6,})#', $path, $m)) {
             return [$m[1], null];
         }
-        // Fallback: a long numeric id anywhere in the path.
+        // Запасной вариант: длинный числовой id где-нибудь в пути.
         if (preg_match('#/(\d{9,})(?:/|$)#', $path, $m)) {
             return [$m[1], null];
         }

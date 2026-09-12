@@ -7,7 +7,7 @@ const props = defineProps({
 })
 const emit = defineEmits(['change'])
 
-// Compact page window with ellipses, e.g. 1 … 4 5 [6] 7 8 … 12
+// Компактное окно страниц с многоточиями, напр. 1 … 4 5 [6] 7 8 … 12
 const pages = computed(() => {
   const last = props.lastPage
   const cur = props.currentPage

@@ -1,8 +1,8 @@
-# Full stack: MySQL + Redis + Laravel (php-fpm) + queue worker + nginx (serves
-# the built Vue SPA and proxies the API) + the Node/Playwright scraper.
+# Полный стек: MySQL + Redis + Laravel (php-fpm) + воркер очереди + nginx
+# (отдаёт собранный SPA на Vue и проксирует API) + скрапер на Node/Playwright.
 #
 #   docker compose up --build
-#   open http://localhost:8080   (login: demo@example.com / password)
+#   открыть http://localhost:8080   (логин: demo@example.com / password)
 
 x-app-env: &app-env
   APP_NAME: "Yandex Reviews"
@@ -11,7 +11,7 @@ x-app-env: &app-env
   APP_KEY: "base64:sPuEssaWq9z7Yb4O05tZwSSIGbyoXIgrbKWU0gPW2m8="
   APP_URL: "http://localhost:8080"
 
-  # SPA / Sanctum — the SPA is served same-origin by nginx on :8080.
+  # SPA / Sanctum — SPA отдаётся с того же origin через nginx на :8080.
   FRONTEND_URL: "http://localhost:8080"
   SANCTUM_STATEFUL_DOMAINS: "localhost:8080,localhost,127.0.0.1:8080"
   SESSION_DOMAIN: localhost
@@ -30,7 +30,7 @@ x-app-env: &app-env
   REDIS_HOST: redis
   REDIS_PORT: "6379"
 
-  # Use the real headless-browser scraper in Docker (not the fixture).
+  # В Docker используем настоящий headless-скрапер, а не фикстуру.
   YANDEX_PARSER_DRIVER: headless
   YANDEX_SCRAPER_URL: "http://scraper:3000"
   YANDEX_SCRAPER_TIMEOUT: "600"
@@ -55,7 +55,7 @@ services:
       timeout: 5s
       retries: 20
     ports:
-      - "33061:3306"   # host access for debugging (optional)
+      - "33061:3306"   # доступ с хоста для отладки (необязательно)
 
   redis:
     image: redis:7-alpine
@@ -71,7 +71,7 @@ services:
       dockerfile: docker/php/Dockerfile
     environment:
       <<: *app-env
-      RUN_MIGRATIONS: "true"   # this container migrates + seeds on boot
+      RUN_MIGRATIONS: "true"   # этот контейнер при старте накатывает миграции + сид
     depends_on:
       mysql:
         condition: service_healthy
@@ -109,7 +109,7 @@ services:
       dockerfile: scraper/Dockerfile
     environment:
       PORT: "3000"
-    # A headless browser needs more than the default shared-memory.
+    # Headless-браузеру мало стандартного объёма shared-memory.
     shm_size: "1gb"
 
 volumes:

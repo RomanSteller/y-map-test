@@ -3,7 +3,7 @@
 namespace App\Services\Yandex\DTO;
 
 /**
- * Everything the parser extracts for one organisation card.
+ * Всё, что парсер вытаскивает по одной карточке организации.
  *
  * @property-read ReviewData[] $reviews
  */
@@ -44,7 +44,7 @@ final class OrganizationData
         );
     }
 
-    /** Order-independent fingerprint of the whole review set. */
+    /** Отпечаток всего набора отзывов, не зависящий от их порядка. */
     public function reviewsHash(): string
     {
         $hashes = array_map(fn (ReviewData $r) => $r->externalId.':'.$r->contentHash(), $this->reviews);

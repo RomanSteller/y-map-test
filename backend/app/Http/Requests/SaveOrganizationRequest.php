@@ -21,8 +21,8 @@ class SaveOrganizationRequest extends FormRequest
                 'required',
                 'string',
                 'max:2048',
-                // Domain-level validation lives in one place (YandexUrl); the
-                // rule just adapts its exception into a validation error.
+                // Вся доменная проверка живёт в одном месте (YandexUrl), а это
+                // правило лишь превращает её исключение в ошибку валидации.
                 function (string $attribute, mixed $value, \Closure $fail): void {
                     try {
                         YandexUrl::parse((string) $value);

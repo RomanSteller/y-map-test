@@ -3,9 +3,9 @@
 namespace App\Services\Yandex\Exceptions;
 
 /**
- * The card was found and looked valid, but zero reviews came back while the
- * counter says there should be some — a strong signal that lazy-loading or the
- * reviews endpoint broke rather than the org genuinely having no reviews.
+ * Карточка нашлась и выглядит нормально, но отзывов пришло ноль, хотя счётчик
+ * говорит, что они есть — верный признак, что сломалась подгрузка или эндпоинт
+ * отзывов, а не то, что у организации и правда нет ни одного отзыва.
  */
 class EmptyResultException extends ParserException
 {

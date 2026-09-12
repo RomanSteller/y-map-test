@@ -14,7 +14,7 @@ class YandexUrlTest extends TestCase
 
         $this->assertSame('192990200894', $url->orgId);
         $this->assertSame('twins_garden', $url->slug);
-        // Tracking query string is stripped.
+        // Рекламный «хвост» в query-строке отрезается.
         $this->assertSame('https://yandex.ru/maps/org/twins_garden/192990200894/reviews', $url->normalized);
     }
 

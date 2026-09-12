@@ -1,9 +1,9 @@
 import { chromium } from 'playwright';
 
 /**
- * A single shared Chromium instance, reused across requests. Launching a
- * browser per request would be slow and memory-heavy; a shared browser with a
- * fresh context per scrape gives isolation without the launch cost.
+ * Один общий инстанс Chromium, переиспользуемый между запросами. Запускать
+ * браузер на каждый запрос — медленно и прожорливо по памяти; общий браузер
+ * плюс свежий контекст на каждый скрап даёт изоляцию без затрат на запуск.
  */
 let browserPromise = null;
 
@@ -15,7 +15,7 @@ export async function getBrowser() {
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
-        // Reduce the most obvious "I am automated" signal.
+        // Убираем самый очевидный признак «я — автоматизация».
         '--disable-blink-features=AutomationControlled',
       ],
     });
@@ -32,9 +32,9 @@ export async function closeBrowser() {
 }
 
 /**
- * A context configured to look like an ordinary ru-locale desktop Chrome, with
- * a realistic UA and viewport. In production this is where proxy rotation and
- * a stealth plugin would plug in (see README → anti-ban).
+ * Контекст, настроенный так, чтобы выглядеть как обычный десктопный Chrome с
+ * русской локалью — с правдоподобными UA и вьюпортом. На проде именно сюда
+ * подключались бы ротация прокси и stealth-плагин (см. README → анти-бан).
  */
 export async function newContext(browser) {
   const context = await browser.newContext({
@@ -48,7 +48,7 @@ export async function newContext(browser) {
     },
   });
 
-  // Strip navigator.webdriver, the classic headless tell.
+  // Убираем navigator.webdriver — классический маркер headless-браузера.
   await context.addInitScript(() => {
     Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
   });

@@ -13,7 +13,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class OrganizationController extends Controller
 {
-    /** List of connected organisations, newest first. */
+    /** Список подключённых организаций, новые сверху. */
     public function index(): AnonymousResourceCollection
     {
         $organizations = Organization::with('latestSnapshot')
@@ -24,16 +24,16 @@ class OrganizationController extends Controller
     }
 
     /**
-     * Save a link from the settings screen and kick off parsing.
+     * Сохраняет ссылку с экрана настроек и запускает парсинг.
      *
-     * Idempotent by design: pasting the same organisation again updates the
-     * existing record (and re-parses) instead of creating a duplicate.
+     * Идемпотентно по задумке: если вставить ту же организацию ещё раз, мы
+     * обновим существующую запись (и перепарсим), а не создадим дубль.
      */
     public function store(SaveOrganizationRequest $request): JsonResponse
     {
         $parsed = YandexUrl::parse($request->validated('url'));
 
-        // Short links have no id yet; key such rows on the normalised URL.
+        // У коротких ссылок id ещё нет — такие строки ключуем по нормализованному URL.
         $attributes = $parsed->orgId !== null
             ? ['yandex_id' => $parsed->orgId]
             : ['yandex_id' => 'url:'.sha1($parsed->normalized)];
@@ -59,7 +59,7 @@ class OrganizationController extends Controller
         return new OrganizationResource($organization->load('latestSnapshot'));
     }
 
-    /** Re-parse an already connected organisation. */
+    /** Перепарсить уже подключённую организацию. */
     public function parse(Organization $organization): JsonResponse
     {
         if ($organization->isBusy()) {
@@ -81,7 +81,7 @@ class OrganizationController extends Controller
             ->response();
     }
 
-    /** Lightweight endpoint the UI polls while a parse is running. */
+    /** Лёгкий эндпоинт, который интерфейс опрашивает, пока идёт парсинг. */
     public function status(Organization $organization): JsonResponse
     {
         return response()->json([
@@ -97,7 +97,7 @@ class OrganizationController extends Controller
         ]);
     }
 
-    /** Aggregate history — «было → стало» across parses. */
+    /** Агрегатная история — «было → стало» между парсингами. */
     public function snapshots(Organization $organization): AnonymousResourceCollection
     {
         return SnapshotResource::collection(

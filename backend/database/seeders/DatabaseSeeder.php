@@ -10,8 +10,8 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // Single seed user — registration is intentionally not part of the app.
-        // Credentials are configurable via env so the hosted demo can differ.
+        // Единственный сид-пользователь — регистрации в приложении намеренно нет.
+        // Логин/пароль берём из env, чтобы на демо-хостинге можно было задать свои.
         User::updateOrCreate(
             ['email' => env('SEED_USER_EMAIL', 'demo@example.com')],
             [

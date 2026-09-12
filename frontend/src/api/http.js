@@ -1,12 +1,12 @@
 import axios from 'axios'
 
 /**
- * Shared axios instance for the Sanctum SPA.
+ * Общий экземпляр axios для Sanctum SPA.
  *
- * - baseURL is empty: requests are same-origin ("/api/…"), proxied to the
- *   backend by Vite in dev and by nginx in production.
- * - withCredentials + withXSRFToken make the browser carry the session cookie
- *   and echo the XSRF-TOKEN cookie back as the X-XSRF-TOKEN header.
+ * - baseURL пустой: запросы идут на тот же origin ("/api/…"), а до бэка их
+ *   проксирует Vite в разработке и nginx на проде.
+ * - withCredentials + withXSRFToken заставляют браузер таскать сессионную куку
+ *   и возвращать куку XSRF-TOKEN обратно в заголовке X-XSRF-TOKEN.
  */
 const http = axios.create({
   baseURL: '',
@@ -18,7 +18,7 @@ const http = axios.create({
   },
 })
 
-/** Sanctum requires fetching the CSRF cookie once before the first mutation. */
+/** Sanctum требует один раз получить CSRF-куку перед первым «пишущим» запросом. */
 export async function ensureCsrfCookie() {
   await http.get('/sanctum/csrf-cookie')
 }

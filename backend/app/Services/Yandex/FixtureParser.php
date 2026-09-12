@@ -7,13 +7,14 @@ use App\Services\Yandex\DTO\OrganizationData;
 use App\Services\Yandex\Exceptions\SourceUnavailableException;
 
 /**
- * Replays a bundled JSON snapshot of a real organisation (captured from a live
- * Yandex card). It exists so the whole application — auth, queue, pagination,
- * snapshots, UI — can be run and graded end-to-end without live network access
- * to Yandex or a running headless browser. Selected via YANDEX_PARSER_DRIVER.
+ * Проигрывает сохранённый JSON-снимок реальной организации (снятый с живой
+ * карточки Яндекса). Нужен, чтобы всё приложение — авторизацию, очередь,
+ * пагинацию, снимки, интерфейс — можно было прогнать целиком без живого доступа
+ * к Яндексу и без запущенного headless-браузера. Выбирается через
+ * YANDEX_PARSER_DRIVER.
  *
- * It goes through the exact same ResponseValidator as the real parser, so the
- * data contract is identical.
+ * Прогоняется через тот же самый ResponseValidator, что и боевой парсер, так
+ * что контракт данных одинаковый.
  */
 final class FixtureParser implements ReviewParser
 {
@@ -36,8 +37,8 @@ final class FixtureParser implements ReviewParser
             throw new SourceUnavailableException('Не удалось прочитать фикстуру.');
         }
 
-        // Simulate paged lazy-loading so the progress bar behaves like the real
-        // scraper would.
+        // Изображаем постраничную подгрузку, чтобы прогресс-бар вёл себя так же,
+        // как с настоящим скрапером.
         $total = max(1, (int) ($raw['organization']['reviews_count'] ?? count($raw['reviews'] ?? [])));
         $loaded = count($raw['reviews'] ?? []);
         for ($i = 1; $i <= 4; $i++) {

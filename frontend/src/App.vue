@@ -52,7 +52,7 @@ async function logout() {
   text-transform: lowercase;
 }
 .brand:hover { color: #000; }
-/* stylised "о" echoing the prochitano ring mark */
+/* стилизованная «о» — отсылка к кольцевому логотипу prochitano */
 .brand-o {
   display: inline-block;
   color: transparent;

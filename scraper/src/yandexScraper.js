@@ -1,22 +1,22 @@
 import { getBrowser, newContext } from './browser.js';
 
 /**
- * Scrape one Yandex.Maps organisation.
+ * Скрапит одну организацию с Яндекс.Карт.
  *
- * Strategy (see README for the full rationale):
- *   1. Open the organisation's /reviews/ page in a real headless browser.
- *   2. Read the server-rendered app state embedded as <script class="state-view">.
- *      That already gives us the org meta (rating, both counters) plus the
- *      first ~50 reviews — with zero anti-bot friction.
- *   3. Register a response listener for the page's own `fetchReviews` XHRs.
- *      Those requests are signed in-page (the `s=` / csrfToken parameters), so
- *      by letting the page make them and just harvesting the JSON we never have
- *      to reproduce Yandex's signature ourselves.
- *   4. Scroll the reviews list to trigger lazy-loading until we have them all
- *      (or hit maxReviews), reporting progress as we go.
+ * Стратегия (полное обоснование — в README):
+ *   1. Открываем страницу /reviews/ организации в настоящем headless-браузере.
+ *   2. Читаем состояние приложения, отрендеренное сервером в
+ *      <script class="state-view">. Там уже есть мета организации (рейтинг, оба
+ *      счётчика) плюс первые ~50 отзывов — и никакого антибота.
+ *   3. Вешаем слушатель на XHR-ы `fetchReviews`, которые страница шлёт сама.
+ *      Эти запросы подписаны прямо на странице (параметры `s=` / csrfToken),
+ *      поэтому, позволяя странице делать их самой и просто собирая JSON, мы
+ *      вообще не воспроизводим подпись Яндекса руками.
+ *   4. Прокручиваем список отзывов, чтобы запустить подгрузку, пока не соберём
+ *      все (или не упрёмся в maxReviews), попутно отдавая прогресс.
  *
- * Yielded events: {type:'progress',progress,message} … then one
- * {type:'result',data} or {type:'error',reason,message}.
+ * Отдаёт события: {type:'progress',progress,message} … затем одно
+ * {type:'result',data} или {type:'error',reason,message}.
  */
 export async function* scrapeOrganization({ url, maxReviews = 600 }) {
   const reviewsUrl = ensureReviewsPath(url);
@@ -24,20 +24,20 @@ export async function* scrapeOrganization({ url, maxReviews = 600 }) {
   const context = await newContext(browser);
   const page = await context.newPage();
 
-  // Collect reviews from the page's own signed XHRs, keyed by id (dedup).
+  // Собираем отзывы из подписанных XHR самой страницы, ключ — id (для дедупа).
   const collected = new Map();
   page.on('response', async (response) => {
     const u = response.url();
     if (!u.includes('fetchReviews')) return;
     try {
       const json = await response.json();
-      // A successful page fetch wraps them as {data:{reviews:[…]}}; the
-      // server-side render / other calls use {reviews:[…]}. CSRF-rotation
-      // responses ({csrfToken}) simply have neither.
+      // Успешный запрос страницы заворачивает их в {data:{reviews:[…]}};
+      // серверный рендер / прочие вызовы — в {reviews:[…]}. А ответы с ротацией
+      // CSRF ({csrfToken}) не содержат ни того, ни другого.
       const list = json?.data?.reviews ?? json?.reviews ?? [];
       for (const r of list) addReview(collected, r);
     } catch {
-      /* non-JSON / rotation response — ignore */
+      /* не-JSON / ответ с ротацией токена — пропускаем */
     }
   });
 
@@ -73,22 +73,22 @@ export async function* scrapeOrganization({ url, maxReviews = 600 }) {
       return;
     }
 
-    // Seed with the server-rendered first page.
+    // Затравка — первая страница, отрендеренная сервером.
     for (const r of extractEmbeddedReviews(state)) addReview(collected, r);
 
     const target = Math.min(org.reviews_count || collected.size, maxReviews);
     yield progress(15, `Найдено ${collected.size} из ~${target} отзывов. Подгружаю остальные…`);
 
-    // Park the mouse over the reviews list so real wheel events land there —
-    // that, not a programmatic scrollTop, is what triggers Yandex's lazy-load.
+    // Ставим мышь над списком отзывов, чтобы настоящие события колеса прилетали
+    // именно туда — подгрузку у Яндекса запускает это, а не программный scrollTop.
     await positionOverReviews(page);
 
-    // Lazy-load the rest by scrolling the reviews container.
+    // Подгружаем остальное, прокручивая контейнер с отзывами.
     let stagnant = 0;
     for (let i = 0; i < 200 && collected.size < target; i++) {
       const before = collected.size;
       await scrollReviews(page);
-      await page.waitForTimeout(700 + Math.floor(Math.random() * 500)); // polite jitter
+      await page.waitForTimeout(700 + Math.floor(Math.random() * 500)); // вежливый разброс пауз
 
       if (await looksLikeCaptcha(page)) {
         yield error('blocked', 'Капча появилась во время подгрузки отзывов.');
@@ -96,7 +96,7 @@ export async function* scrapeOrganization({ url, maxReviews = 600 }) {
       }
 
       if (collected.size === before) {
-        if (++stagnant >= 6) break; // no more loading — probably reached the end
+        if (++stagnant >= 6) break; // больше не грузится — видимо, дошли до конца
       } else {
         stagnant = 0;
         const pct = Math.min(95, 15 + Math.round((collected.size / target) * 80));
@@ -123,7 +123,7 @@ export async function* scrapeOrganization({ url, maxReviews = 600 }) {
   }
 }
 
-/* ----------------------------- helpers ----------------------------- */
+/* --------------------------- вспомогательное --------------------------- */
 
 function progress(p, message) {
   return { type: 'progress', progress: p, message };
@@ -147,7 +147,7 @@ async function looksLikeCaptcha(page) {
     .catch(() => false);
 }
 
-/** Read and JSON-parse the embedded <script class="state-view"> blob. */
+/** Читаем и парсим JSON из встроенного <script class="state-view">. */
 async function readStateView(page) {
   const raw = await page
     .locator('script.state-view')
@@ -162,7 +162,7 @@ async function readStateView(page) {
   }
 }
 
-/** Walk the state tree to find the org card carrying ratingData + title. */
+/** Обходим дерево state в поисках карточки организации с ratingData + title. */
 function extractOrg(state) {
   let found = null;
   const visit = (node) => {
@@ -186,7 +186,7 @@ function extractOrg(state) {
   return found;
 }
 
-/** Pull the first-page reviews Yandex server-renders into the state. */
+/** Достаём отзывы первой страницы, которые Яндекс кладёт в state на сервере. */
 function extractEmbeddedReviews(state) {
   let reviews = [];
   const visit = (node) => {
@@ -218,7 +218,7 @@ const REVIEWS_LIST_SELECTORS = [
   '.scroll__container',
 ];
 
-/** Move the mouse over the reviews list so wheel events are delivered to it. */
+/** Наводим мышь на список отзывов, чтобы события колеса шли именно туда. */
 async function positionOverReviews(page) {
   for (const sel of REVIEWS_LIST_SELECTORS) {
     const box = await page.locator(sel).first().boundingBox().catch(() => null);
@@ -230,9 +230,9 @@ async function positionOverReviews(page) {
 }
 
 /**
- * Trigger lazy-loading. A real wheel event is what Yandex's infinite scroll
- * listens for; a programmatic scrollTop alone does not fire it. We send the
- * wheel and also nudge scrollTop as a belt-and-braces fallback.
+ * Запускаем подгрузку. Бесконечная прокрутка Яндекса слушает именно настоящее
+ * событие колеса; один программный scrollTop её не триггерит. Поэтому шлём
+ * колесо и на всякий случай ещё и подталкиваем scrollTop.
  */
 async function scrollReviews(page) {
   await page.mouse.wheel(0, 3500);

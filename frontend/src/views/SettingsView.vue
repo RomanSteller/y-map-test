@@ -33,7 +33,7 @@ async function save() {
   generalError.value = ''
   try {
     const org = await organizationsApi.save(url.value)
-    // Go straight to the org page — it shows live parsing progress.
+    // Сразу уходим на страницу организации — там виден живой прогресс парсинга.
     router.push({ name: 'organization', params: { id: org.id } })
   } catch (e) {
     if (e.response?.status === 422) {

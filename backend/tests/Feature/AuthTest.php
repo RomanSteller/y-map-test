@@ -24,8 +24,8 @@ class AuthTest extends TestCase
     {
         $this->seedUser();
 
-        // Mimic the SPA: an Origin from a stateful domain makes Sanctum start
-        // the session, exactly as it does for the real front-end.
+        // Прикидываемся SPA: Origin из stateful-домена заставляет Sanctum
+        // завести сессию — ровно как для настоящего фронта.
         $this->withHeader('Origin', 'http://localhost')
             ->postJson('/api/login', ['email' => 'demo@example.com', 'password' => 'password'])
             ->assertOk()

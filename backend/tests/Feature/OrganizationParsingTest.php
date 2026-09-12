@@ -52,7 +52,7 @@ class OrganizationParsingTest extends TestCase
 
     public function test_parsing_stores_reviews_counts_and_rating(): void
     {
-        // Queue runs sync in tests, so posting actually parses via the fixture.
+        // В тестах очередь синхронная, так что POST реально парсит через фикстуру.
         $this->actingUser();
 
         $this->postJson('/api/organizations', [
@@ -94,13 +94,13 @@ class OrganizationParsingTest extends TestCase
         $org = Organization::firstOrFail();
         $this->assertSame(300, $org->reviews()->count());
 
-        // Re-parse the same org.
+        // Парсим ту же организацию ещё раз.
         $this->postJson("/api/organizations/{$org->id}/parse")->assertOk();
 
         $org->refresh();
-        // No duplicate reviews...
+        // Дублей отзывов не появилось...
         $this->assertSame(300, $org->reviews()->count());
-        // ...but a second snapshot captures the (empty) diff — history kept.
+        // ...но второй снимок зафиксировал (нулевую) разницу — история сохраняется.
         $this->assertSame(2, $org->snapshots()->count());
         $this->assertSame(0, $org->latestSnapshot->reviews_added);
     }

@@ -2,7 +2,7 @@
 
 namespace App\Services\Yandex\Exceptions;
 
-/** The pasted link is not a recognisable Yandex.Maps organisation URL. */
+/** Вставленная ссылка не похожа на URL карточки организации в Яндекс.Картах. */
 class InvalidUrlException extends ParserException
 {
     public function reason(): string

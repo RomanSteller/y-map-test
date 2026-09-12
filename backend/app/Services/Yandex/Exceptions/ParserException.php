@@ -5,16 +5,16 @@ namespace App\Services\Yandex\Exceptions;
 use RuntimeException;
 
 /**
- * Base class for every failure mode of the parser. Each subclass carries a
- * short machine-readable `reason` so the API, the queue's retry logic and the
- * UI can react differently (a transient network blip is worth retrying, a
- * changed markup is not).
+ * Базовый класс для всех способов, которыми парсер может сломаться. У каждого
+ * наследника есть короткая машинная причина `reason`, чтобы API, логика
+ * ретраев в очереди и интерфейс могли реагировать по-разному (сетевой сбой
+ * стоит повторить, а изменившуюся вёрстку — нет).
  */
 abstract class ParserException extends RuntimeException
 {
     abstract public function reason(): string;
 
-    /** Whether re-running the job later has any chance of succeeding. */
+    /** Есть ли смысл перезапускать джобу позже — вдруг получится. */
     public function isRetryable(): bool
     {
         return true;

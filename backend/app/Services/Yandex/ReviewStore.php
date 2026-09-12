@@ -8,14 +8,14 @@ use App\Services\Yandex\DTO\OrganizationData;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Persists a parse result idempotently.
+ * Идемпотентно сохраняет результат парсинга.
  *
- * Re-parsing the same organisation must not create duplicate reviews: we upsert
- * on (organization_id, external_id) and use each review's content hash to tell
- * "new" from "changed" from "unchanged". Every successful parse also writes an
- * OrganizationSnapshot, so the aggregate history (rating / counts over time,
- * how many reviews appeared or changed) is queryable — the "было → стало"
- * requirement.
+ * Повторный парсинг той же организации не должен плодить дубли отзывов: делаем
+ * upsert по (organization_id, external_id), а по хэшу содержимого отличаем
+ * «новый» от «изменённого» и от «без изменений». Каждый удачный парсинг ещё и
+ * пишет OrganizationSnapshot, чтобы можно было поднять агрегатную историю
+ * (рейтинг и счётчики во времени, сколько отзывов появилось или поменялось) —
+ * то самое требование «было → стало».
  */
 final class ReviewStore
 {

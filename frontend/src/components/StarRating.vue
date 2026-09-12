@@ -4,7 +4,7 @@ const props = defineProps({
   size: { type: Number, default: 16 },
 })
 
-// Fill percentage for the i-th star (1..5), supporting half stars.
+// Процент заливки для i-й звезды (1..5), с поддержкой половинок.
 function fillFor(i) {
   const v = props.value ?? 0
   if (v >= i) return '100%'

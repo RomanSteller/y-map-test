@@ -12,19 +12,19 @@ use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
- * Production parser. It does NOT talk to Yandex directly — it delegates to the
- * Node/Playwright scraper micro-service (see /scraper), which drives a real
- * headless Chromium.
+ * Боевой парсер. С Яндексом напрямую НЕ разговаривает — перекладывает работу на
+ * Node/Playwright-сервис-скрапер (см. /scraper), который рулит настоящим
+ * headless-хромиумом.
  *
- * Why a headless browser and not the internal JSON endpoint? Yandex's
- * fetchReviews call is signed (an `s=` parameter + rotating csrfToken/sessionId
- * computed in-page). Reproducing that signature server-side is brittle and
- * breaks whenever Yandex tweaks their anti-bot code. Letting the real page
- * compute the signature and simply harvesting the responses is far more robust.
- * Full trade-off analysis is in the README.
+ * Почему headless-браузер, а не внутренний JSON-эндпоинт? Запрос fetchReviews у
+ * Яндекса подписан (параметр `s=` плюс ротирующиеся csrfToken/sessionId,
+ * которые считаются прямо на странице). Воспроизводить эту подпись на бэке —
+ * хрупко: ломается каждый раз, когда Яндекс подкручивает свой антибот. Гораздо
+ * надёжнее дать реальной странице самой посчитать подпись, а нам — просто
+ * собрать ответы. Полный разбор компромиссов — в README.
  *
- * The scraper streams newline-delimited JSON: many {type:"progress"} events
- * followed by one {type:"result"} (or {type:"error"}).
+ * Скрапер стримит JSON построчно: пачка событий {type:"progress"}, а в конце
+ * одно {type:"result"} (или {type:"error"}).
  */
 final class HeadlessBrowserParser implements ReviewParser
 {
@@ -51,6 +51,7 @@ final class HeadlessBrowserParser implements ReviewParser
             throw new SourceUnavailableException('Сервис парсинга недоступен: '.$e->getMessage(), previous: $e);
         }
 
+        // 429/403 — почти наверняка антибот сработал.
         if ($response->status() === 429 || $response->status() === 403) {
             throw new BlockedException('Похоже, нас временно заблокировал Яндекс (HTTP '.$response->status().').');
         }
@@ -82,6 +83,8 @@ final class HeadlessBrowserParser implements ReviewParser
                     continue;
                 }
 
+                // Прогресс — прокидываем в колбэк, ошибку — превращаем в
+                // типизированное исключение, результат — запоминаем.
                 match ($event['type']) {
                     'progress' => $onProgress && $onProgress(
                         (int) ($event['progress'] ?? 0),

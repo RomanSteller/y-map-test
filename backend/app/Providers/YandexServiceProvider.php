@@ -15,9 +15,9 @@ class YandexServiceProvider extends ServiceProvider
     {
         $this->app->singleton(ResponseValidator::class);
 
-        // Bind the ReviewParser interface to the concrete driver chosen in
-        // config. Everything else depends on the interface, so switching from
-        // the fixture to the real headless scraper is a one-line env change.
+        // Привязываем интерфейс ReviewParser к конкретному драйверу из конфига.
+        // Всё остальное завязано на интерфейс, поэтому переключение с фикстуры
+        // на боевой headless-скрапер — это правка одной переменной окружения.
         $this->app->bind(ReviewParser::class, function ($app) {
             $config = $app['config']->get('services.yandex');
 

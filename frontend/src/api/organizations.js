@@ -1,6 +1,6 @@
 import http from './http'
 
-/** Thin API layer for organisation + review endpoints. */
+/** Тонкая обёртка над эндпоинтами организаций и отзывов. */
 export const organizationsApi = {
   list() {
     return http.get('/api/organizations').then((r) => r.data.data)

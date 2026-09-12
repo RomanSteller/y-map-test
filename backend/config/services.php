@@ -37,21 +37,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Yandex.Maps reviews parser
+    | Парсер отзывов Яндекс.Карт
     |--------------------------------------------------------------------------
     |
-    | driver:        which parser implementation to use.
-    |                  - "headless" : drive the Node/Playwright scraper service
-    |                                 (production; robust to request signing).
-    |                  - "fixture"  : replay a bundled JSON snapshot of a real
-    |                                 organisation. Lets the whole app run and be
-    |                                 graded without live access to Yandex.
-    | scraper_url:   base URL of the Node scraper micro-service.
-    | scraper_timeout: HTTP timeout (s) when talking to the scraper. Pulling
-    |                  ~600 reviews with polite pauses takes a while.
-    | page_size:     reviews shown per UI page (spec requires 50).
-    | max_reviews:   safety cap on how many reviews we try to pull per org.
-    | fixture_path:  fixture file used by the "fixture" driver.
+    | driver:        какую реализацию парсера использовать.
+    |                  - "headless" : гоняем Node/Playwright-сервис-скрапер
+    |                                 (боевой режим, устойчив к подписи запросов).
+    |                  - "fixture"  : проигрываем сохранённый JSON-снимок реальной
+    |                                 организации. Позволяет запустить и проверить
+    |                                 всё приложение без живого доступа к Яндексу.
+    | scraper_url:   адрес Node-сервиса-скрапера.
+    | scraper_timeout: таймаут (сек) на запрос к скраперу. Вытянуть ~600 отзывов
+    |                  с вежливыми паузами — дело небыстрое.
+    | page_size:     отзывов на страницу в интерфейсе (по ТЗ — 50).
+    | max_reviews:   предохранитель: сколько максимум отзывов тянем с одной орг.
+    | fixture_path:  файл-фикстура для драйвера "fixture".
     |
     */
     'yandex' => [

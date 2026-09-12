@@ -2,7 +2,7 @@
 
 namespace App\Services\Yandex\Exceptions;
 
-/** Yandex served a captcha / anti-bot wall. Retryable, but only after backoff. */
+/** Яндекс показал капчу / антибот-заслон. Повторить можно, но только после паузы. */
 class BlockedException extends ParserException
 {
     public function reason(): string

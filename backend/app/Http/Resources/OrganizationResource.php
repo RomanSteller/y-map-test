@@ -21,7 +21,7 @@ class OrganizationResource extends JsonResource
 
             'rating' => $this->rating,
             'ratings_count' => $this->ratings_count,   // «оценки»
-            'reviews_count' => $this->reviews_count,    // «отзывы»
+            'reviews_count' => $this->reviews_count,   // «отзывы»
 
             'parse' => [
                 'status' => $this->parse_status,
@@ -32,7 +32,7 @@ class OrganizationResource extends JsonResource
                 'last_parsed_at' => $this->last_parsed_at?->toIso8601String(),
             ],
 
-            // The most recent snapshot's diff, so the UI can show "было → стало".
+            // Разница по последнему снимку — чтобы в UI показать «было → стало».
             'last_snapshot' => new SnapshotResource($this->whenLoaded('latestSnapshot')),
 
             'created_at' => $this->created_at?->toIso8601String(),

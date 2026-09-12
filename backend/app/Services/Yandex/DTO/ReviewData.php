@@ -5,8 +5,8 @@ namespace App\Services\Yandex\DTO;
 use Carbon\CarbonImmutable;
 
 /**
- * A single parsed review, normalised into the shape our DB expects and
- * decoupled from whatever Yandex's payload happens to look like today.
+ * Один распарсенный отзыв, приведённый к виду, который ждёт наша БД, и
+ * отвязанный от того, как сегодня выглядит ответ Яндекса.
  */
 final class ReviewData
 {
@@ -32,7 +32,7 @@ final class ReviewData
         );
     }
 
-    /** Fingerprint of the mutable content, used to detect edited reviews. */
+    /** Отпечаток изменяемого содержимого — по нему ловим правки в отзыве. */
     public function contentHash(): string
     {
         return sha1(implode('|', [

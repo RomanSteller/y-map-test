@@ -12,9 +12,9 @@ app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 /**
  * POST /scrape { url, orgId?, maxReviews? }
  *
- * Streams newline-delimited JSON: many {type:"progress"} events, then exactly
- * one {type:"result"} or {type:"error"}. The Laravel HeadlessBrowserParser
- * consumes this stream and forwards progress to the queue/UI.
+ * Стримит JSON построчно: пачку событий {type:"progress"}, а затем ровно одно
+ * {type:"result"} или {type:"error"}. На той стороне HeadlessBrowserParser из
+ * Laravel читает этот поток и прокидывает прогресс в очередь/интерфейс.
  */
 app.post('/scrape', async (req, res) => {
   const { url, maxReviews } = req.body ?? {};

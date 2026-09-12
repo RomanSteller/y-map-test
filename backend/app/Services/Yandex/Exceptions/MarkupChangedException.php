@@ -3,9 +3,9 @@
 namespace App\Services\Yandex\Exceptions;
 
 /**
- * The page loaded but the structure we rely on (the embedded state JSON /
- * expected fields) was not there. Almost always means Yandex changed their
- * markup — a human needs to update the parser, so retrying is pointless.
+ * Страница загрузилась, но нужной нам структуры (встроенного state-JSON /
+ * ожидаемых полей) там не оказалось. Почти всегда значит, что Яндекс поменял
+ * вёрстку — парсер должен править человек, так что повторять смысла нет.
  */
 class MarkupChangedException extends ParserException
 {

@@ -6,13 +6,13 @@
   --border-strong: #111111;
   --text: #0a0a0a;
   --muted: #7c848c;
-  --accent: #13efe2;        /* prochitano cyan */
+  --accent: #13efe2;        /* бирюзовый, как на prochitano */
   --accent-dark: #0fd3c7;
   --star: #ffb400;
   --success: #0f9d58;
   --danger: #e5322d;
   --warning: #b7791f;
-  --radius: 0px;            /* sharp corners — the brand's signature */
+  --radius: 0px;            /* острые углы — фирменная фишка */
   --radius-card: 2px;
   --shadow: none;
   --font: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -98,7 +98,7 @@ input:focus {
   font-family: inherit;
   cursor: pointer;
   background: var(--accent);
-  color: #000;                 /* black text on cyan — the brand look */
+  color: #000;                 /* чёрный текст на бирюзе — как в оригинале */
   transition: background 0.15s, transform 0.05s;
 }
 .btn:hover:not(:disabled) { background: var(--accent-dark); }

@@ -76,12 +76,12 @@ function startPolling() {
 
       if (!s.is_busy) {
         stopPolling()
-        // Refresh full record + first page of reviews.
+        // Подтягиваем полную запись и первую страницу отзывов.
         org.value = await organizationsApi.get(props.id)
         if (s.status === 'completed') await loadReviews(1)
       }
     } catch {
-      /* keep polling; transient */
+      /* продолжаем опрос — это временный сбой */
     }
   }, 1500)
 }
@@ -98,7 +98,7 @@ async function reparse() {
     org.value = await organizationsApi.reparse(props.id)
     startPolling()
   } catch {
-    /* ignore; a 409 just means it's already running */
+    /* игнорируем: 409 просто значит, что парсинг уже идёт */
     startPolling()
   }
 }
@@ -118,7 +118,7 @@ onUnmounted(stopPolling)
     <template v-else>
       <RouterLink :to="{ name: 'settings' }" class="small">← К настройкам</RouterLink>
 
-      <!-- Header / summary -->
+      <!-- Шапка / сводка -->
       <section class="card summary">
         <div class="summary-head">
           <div>
@@ -138,7 +138,7 @@ onUnmounted(stopPolling)
           </button>
         </div>
 
-        <!-- Stats: rating + two DISTINCT counters -->
+        <!-- Показатели: рейтинг + два РАЗНЫХ счётчика -->
         <div v-if="org.rating || org.ratings_count" class="stats">
           <div class="stat">
             <div class="stat-rating">
@@ -158,7 +158,7 @@ onUnmounted(stopPolling)
         </div>
       </section>
 
-      <!-- Live parsing progress -->
+      <!-- Живой прогресс парсинга -->
       <section v-if="isBusy" class="card stack">
         <div class="row">
           <span class="spinner spinner-dark" />
@@ -172,7 +172,7 @@ onUnmounted(stopPolling)
         </p>
       </section>
 
-      <!-- Failure -->
+      <!-- Ошибка -->
       <section v-else-if="isFailed" class="alert alert-error">
         <div>
           <strong>Не удалось собрать отзывы.</strong>
@@ -180,7 +180,7 @@ onUnmounted(stopPolling)
         </div>
       </section>
 
-      <!-- Reviews -->
+      <!-- Отзывы -->
       <section v-else class="stack">
         <div class="row">
           <h2 style="margin:0">Отзывы</h2>

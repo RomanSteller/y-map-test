@@ -6,15 +6,15 @@ use App\Http\Controllers\ReviewController;
 use Illuminate\Support\Facades\Route;
 
 /*
-| All API routes. Auth is cookie-based (Sanctum SPA): the front-end fetches
-| /sanctum/csrf-cookie first, then hits these under the session cookie.
+| Все маршруты API. Авторизация по кукам (Sanctum SPA): фронт сначала берёт
+| /sanctum/csrf-cookie, а потом ходит сюда под сессионной кукой.
 */
 
-// Public.
+// Публичные.
 Route::post('/login', [AuthController::class, 'login'])
     ->middleware('throttle:10,1');
 
-// Authenticated.
+// Только для авторизованных.
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'me']);

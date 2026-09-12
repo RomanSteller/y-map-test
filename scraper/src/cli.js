@@ -2,9 +2,9 @@ import { scrapeOrganization } from './yandexScraper.js';
 import { closeBrowser } from './browser.js';
 
 /**
- * Manual test helper:
+ * Хелпер для ручной проверки:
  *   node src/cli.js "https://yandex.ru/maps/org/twins_garden/192990200894/" 120
- * Prints progress to stderr and the final JSON to stdout.
+ * Прогресс печатает в stderr, финальный JSON — в stdout.
  */
 const url = process.argv[2];
 const maxReviews = Number(process.argv[3]) || 200;

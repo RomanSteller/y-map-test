@@ -10,12 +10,13 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 class ReviewController extends Controller
 {
     /**
-     * Paginated reviews for one organisation — 50 per page as required.
+     * Отзывы одной организации с пагинацией — по 50 на страницу, как в ТЗ.
      *
-     * Reviews are served from our own DB (the parse result is cached there),
-     * not re-scraped on every page turn. So paging is a cheap indexed query and
-     * the front-end can switch pages instantly without hammering Yandex. The
-     * reasoning behind caching-then-paginating is in the README.
+     * Отзывы отдаём из своей БД (результат парсинга там закэширован), а не
+     * скрапим заново на каждый переход по странице. Поэтому листание — это
+     * дешёвый запрос по индексу, и фронт переключает страницы мгновенно, не
+     * долбя Яндекс. Почему выбран подход «сначала закэшировать, потом листать» —
+     * расписано в README.
      */
     public function index(Request $request, Organization $organization): AnonymousResourceCollection
     {

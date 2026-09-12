@@ -12,8 +12,8 @@ use Illuminate\Validation\ValidationException;
 class AuthController extends Controller
 {
     /**
-     * Cookie-based (Sanctum SPA) login. The front-end first calls
-     * /sanctum/csrf-cookie, then posts here; on success a session cookie is set.
+     * Логин по кукам (Sanctum SPA). Фронт сначала дёргает /sanctum/csrf-cookie,
+     * потом постит сюда; при успехе ставится сессионная кука.
      */
     public function login(LoginRequest $request): JsonResponse
     {

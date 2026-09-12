@@ -53,6 +53,7 @@ class Organization extends Model
         return $this->hasMany(OrganizationSnapshot::class);
     }
 
+    // Последний по времени снимок — чтобы показывать «было → стало».
     public function latestSnapshot(): HasOne
     {
         return $this->hasOne(OrganizationSnapshot::class)->latestOfMany();

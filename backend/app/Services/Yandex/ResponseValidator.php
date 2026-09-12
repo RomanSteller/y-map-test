@@ -7,12 +7,13 @@ use App\Services\Yandex\Exceptions\EmptyResultException;
 use App\Services\Yandex\Exceptions\MarkupChangedException;
 
 /**
- * The parser's "am I still working?" self-check.
+ * Самопроверка парсера в духе «а я вообще ещё живой?».
  *
- * Scrapers fail silently: Yandex changes a key, our selector returns null, and
- * we happily persist an empty/garbage result. This validator turns those quiet
- * failures into loud, typed exceptions by asserting the invariants a healthy
- * response must satisfy. See README → "How the parser knows it broke".
+ * Скраперы ломаются молча: Яндекс переименовал ключ, наш селектор вернул null,
+ * а мы радостно сохранили пустой/мусорный результат. Этот валидатор превращает
+ * такие тихие сбои в громкие типизированные исключения, проверяя инварианты,
+ * которым обязан удовлетворять здоровый ответ. См. README → «Как парсер
+ * понимает, что сломался».
  */
 final class ResponseValidator
 {
@@ -24,7 +25,7 @@ final class ResponseValidator
             throw new MarkupChangedException('В ответе нет данных организации — вероятно, изменилась структура страницы Яндекса.');
         }
 
-        // A valid card must expose an id and at least one recognisable counter.
+        // У нормальной карточки должны быть id и хотя бы один вменяемый счётчик.
         $id = $org['yandex_id'] ?? $org['id'] ?? null;
         if (empty($id)) {
             throw new MarkupChangedException('Не найден идентификатор организации в ответе парсера.');
@@ -38,13 +39,13 @@ final class ResponseValidator
 
         $data = OrganizationData::fromArray($raw);
 
-        // Sanity range: a 5-star scale.
+        // Проверка на здравый смысл: шкала-то пятибалльная.
         if ($data->rating !== null && ($data->rating < 0 || $data->rating > 5)) {
             throw new MarkupChangedException("Рейтинг вне допустимого диапазона ({$data->rating}) — данные распарсились неверно.");
         }
 
-        // If Yandex reports reviews but we extracted none, lazy-loading or the
-        // reviews endpoint is broken — do not store a misleading "0 reviews".
+        // Если Яндекс говорит, что отзывы есть, а мы не достали ни одного —
+        // сломалась подгрузка или эндпоинт отзывов. Не сохраняем обманчивый «0».
         if ($data->reviewsCount > 0 && count($data->reviews) === 0) {
             throw new EmptyResultException("Яндекс сообщает о {$data->reviewsCount} отзывах, но не удалось получить ни одного.");
         }

@@ -6,18 +6,18 @@ use App\Services\Yandex\DTO\OrganizationData;
 use App\Services\Yandex\YandexUrl;
 
 /**
- * The single seam between "our application" and "how we get data out of
- * Yandex". Controllers and jobs depend only on this interface, so the scraping
- * strategy (headless browser, internal JSON, fixture) can be swapped without
- * touching anything else. This is the "logic lives in a service, not the
- * controller" requirement from the spec.
+ * Единственный стык между «нашим приложением» и «тем, как мы достаём данные
+ * из Яндекса». Контроллеры и джобы завязаны только на этот интерфейс, поэтому
+ * стратегию скрапинга (headless-браузер, внутренний JSON, фикстура) можно
+ * менять, ничего вокруг не трогая. Это как раз требование ТЗ — «логика в
+ * сервисе, а не в контроллере».
  */
 interface ReviewParser
 {
     /**
      * @param  callable(int $progress, string $message): void|null  $onProgress
-     *         Optional callback invoked as reviews are pulled, so a queued job
-     *         can surface progress (0..100) to the UI.
+     *         Необязательный колбэк: дёргается по мере вытягивания отзывов,
+     *         чтобы фоновая джоба могла отдавать прогресс (0..100) в интерфейс.
      *
      * @throws \App\Services\Yandex\Exceptions\ParserException
      */

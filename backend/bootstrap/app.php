@@ -17,12 +17,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Enable cookie-based (SPA) authentication for the /api routes so the
-        // Vue front-end can authenticate with the Sanctum session cookie.
+        // Включаем аутентификацию по кукам (SPA) для /api — фронт на Vue
+        // логинится через сессионную куку Sanctum.
         $middleware->statefulApi();
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        // Always answer the API with JSON, never an HTML error page.
+        // API всегда отвечает JSON'ом, а не HTML-страницей с ошибкой.
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson()
         );

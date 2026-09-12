@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('organization_id')->constrained()->cascadeOnDelete();
 
-            // Stable id from Yandex — the key we upsert on to avoid duplicates.
+            // Стабильный id из Яндекса — по нему делаем upsert, чтобы не плодить дубли.
             $table->string('external_id');
 
             $table->string('author')->nullable();
@@ -20,14 +20,14 @@ return new class extends Migration
             $table->longText('text')->nullable();
             $table->timestamp('reviewed_at')->nullable();
 
-            // Hash of the meaningful fields; lets us detect an edited review
-            // between two parses without diffing every column.
+            // Хэш значимых полей — так ловим отредактированный отзыв между двумя
+            // парсингами, не сравнивая каждую колонку по отдельности.
             $table->string('content_hash', 40)->nullable();
 
             $table->timestamps();
 
             $table->unique(['organization_id', 'external_id']);
-            // Reviews are listed newest-first and paginated 50 at a time.
+            // Отзывы показываем от новых к старым и листаем по 50 штук.
             $table->index(['organization_id', 'reviewed_at']);
         });
     }

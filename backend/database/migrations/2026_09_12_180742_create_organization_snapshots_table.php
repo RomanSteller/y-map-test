@@ -7,9 +7,9 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * One row per successful parse of an organisation. Keeping the aggregate
-     * numbers over time is what lets us answer "что изменилось между
-     * парсингами" (было → стало) without storing full copies of every review.
+     * По одной строке на каждый удачный парсинг организации. Храня агрегаты
+     * во времени, мы можем ответить на вопрос «что изменилось между
+     * парсингами» (было → стало), не копируя целиком все отзывы каждый раз.
      */
     public function up(): void
     {
@@ -21,13 +21,13 @@ return new class extends Migration
             $table->unsignedInteger('ratings_count')->default(0);
             $table->unsignedInteger('reviews_count')->default(0);
 
-            // How many reviews we actually stored, and how many were new /
-            // changed relative to the previous snapshot.
+            // Сколько отзывов реально сохранили и сколько из них новых /
+            // изменившихся по сравнению с прошлым снимком.
             $table->unsignedInteger('reviews_scraped')->default(0);
             $table->unsignedInteger('reviews_added')->default(0);
             $table->unsignedInteger('reviews_updated')->default(0);
 
-            // Fingerprint of the whole review set for cheap change detection.
+            // Отпечаток всего набора отзывов — чтобы дёшево ловить изменения.
             $table->string('reviews_hash', 40)->nullable();
 
             $table->timestamps();

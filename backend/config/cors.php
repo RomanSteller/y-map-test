@@ -1,12 +1,12 @@
 <?php
 
 return [
-    // Paths the SPA hits cross-origin: the API and the CSRF-cookie endpoint.
+    // Пути, куда SPA стучится с другого origin: сам API и эндпоинт CSRF-куки.
     'paths' => ['api/*', 'login', 'logout', 'sanctum/csrf-cookie'],
 
     'allowed_methods' => ['*'],
 
-    // Explicit origins (not '*') because credentials (cookies) are sent.
+    // Перечисляем origin'ы явно (не '*'), потому что шлём куки.
     'allowed_origins' => array_filter(explode(
         ',',
         (string) env('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost')

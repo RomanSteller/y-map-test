@@ -2,7 +2,7 @@
 
 namespace App\Services\Yandex\Exceptions;
 
-/** The page could not be fetched (network error, timeout, 5xx). Retryable. */
+/** Страницу не удалось загрузить (сеть, таймаут, 5xx). Можно повторить. */
 class SourceUnavailableException extends ParserException
 {
     public function reason(): string
