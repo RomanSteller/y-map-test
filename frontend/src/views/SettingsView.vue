@@ -141,15 +141,17 @@ input.invalid { border-color: var(--danger); }
 .org-meta { display: flex; align-items: center; gap: 10px; }
 .rating-num { font-weight: 700; }
 .badge {
-  font-size: 12px;
-  font-weight: 600;
-  padding: 3px 9px;
-  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 4px 10px;
+  border-radius: 0;
   background: #eceef0;
   color: var(--muted);
   white-space: nowrap;
 }
 .badge-completed { background: #e5f6ec; color: var(--success); }
 .badge-failed { background: #fdecee; color: var(--danger); }
-.badge-parsing, .badge-queued { background: #eef4ff; color: #1d4ed8; }
+.badge-parsing, .badge-queued { background: #d8fbf8; color: #087b73; }
 </style>

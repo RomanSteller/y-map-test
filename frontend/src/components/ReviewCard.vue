@@ -31,17 +31,17 @@ function formatDate(iso) {
 </template>
 
 <style scoped>
-.review { padding: 16px 18px; }
-.review-head { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.review { padding: 18px 20px; }
+.review-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
 .avatar {
-  width: 38px; height: 38px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #ffd1d1, #ff9a9a);
-  color: #7a1010;
+  width: 40px; height: 40px;
+  border-radius: 0;
+  background: #0a0a0a;
+  color: #fff;
   display: flex; align-items: center; justify-content: center;
-  font-weight: 700; text-transform: uppercase;
+  font-weight: 800; text-transform: uppercase;
   flex-shrink: 0;
 }
-.author { font-weight: 600; }
-.review-text { margin: 0; white-space: pre-line; color: #2b3138; }
+.author { font-weight: 700; }
+.review-text { margin: 0; white-space: pre-line; color: #1a1f24; }
 </style>

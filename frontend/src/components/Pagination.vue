@@ -53,19 +53,19 @@ function go(p) {
 <style scoped>
 .pagination { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
 .pg {
-  min-width: 38px;
-  height: 38px;
+  min-width: 40px;
+  height: 40px;
   padding: 0 10px;
   border: 1px solid var(--border);
   background: #fff;
-  border-radius: 9px;
+  border-radius: 0;
   cursor: pointer;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text);
 }
-.pg:hover:not(:disabled):not(.active) { background: #f2f3f5; }
-.pg.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.pg:hover:not(:disabled):not(.active) { background: var(--accent); border-color: var(--accent); }
+.pg.active { background: #0a0a0a; color: #fff; border-color: #0a0a0a; }
 .pg.dots { border: none; background: transparent; cursor: default; }
 .pg:disabled:not(.active):not(.dots) { opacity: 0.4; cursor: not-allowed; }
 </style>
