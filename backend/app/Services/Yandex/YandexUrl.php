@@ -2,23 +2,19 @@
 
 namespace App\Services\Yandex;
 
-use App\Services\Yandex\Exceptions\InvalidUrlException;
+use InvalidArgumentException;
 
 /**
- * Разбирает и проверяет ссылку на организацию в Яндекс.Картах.
+ * Разбор и проверка ссылки на организацию в Яндекс.Картах.
  *
- * Понимает распространённые варианты, например:
+ * Понимает основные варианты:
  *   https://yandex.ru/maps/org/twins_garden/192990200894/
  *   https://yandex.ru/maps/org/192990200894/reviews/
- *   https://yandex.com/maps/213/moscow/org/.../192990200894/reviews/
- *   https://yandex.ru/maps/-/CDf1
+ *   https://yandex.com/maps/213/moscow/org/.../192990200894/
  */
 final class YandexUrl
 {
-    private const ALLOWED_HOSTS = [
-        'yandex.ru', 'yandex.com', 'yandex.by', 'yandex.kz', 'yandex.eu',
-        'maps.yandex.ru', 'maps.yandex.com',
-    ];
+    private const HOSTS = ['yandex.ru', 'yandex.com', 'yandex.by', 'yandex.kz'];
 
     public function __construct(
         public readonly string $normalized,
@@ -29,65 +25,45 @@ final class YandexUrl
 
     public static function parse(string $raw): self
     {
-        $raw = trim($raw);
-        $parts = parse_url($raw);
+        $p = parse_url(trim($raw));
 
-        if ($parts === false || empty($parts['scheme']) || empty($parts['host']) || empty($parts['path'])) {
-            throw new InvalidUrlException('Ссылка не похожа на URL.');
+        if (! is_array($p) || empty($p['host']) || empty($p['path'])) {
+            throw new InvalidArgumentException('Ссылка не похожа на URL.');
         }
 
-        if (! in_array(strtolower($parts['scheme']), ['http', 'https'], true)) {
-            throw new InvalidUrlException('Поддерживаются только http/https ссылки.');
-        }
-
-        $host = strtolower($parts['host']);
-        if (! self::hostAllowed($host)) {
-            throw new InvalidUrlException('Это не ссылка на Яндекс.Карты.');
-        }
-
-        $path = $parts['path'];
-        if (! str_contains($path, '/maps')) {
-            throw new InvalidUrlException('В ссылке нет раздела /maps.');
-        }
-
-        [$orgId, $slug] = self::extractOrgId($path);
-
-        // Короткая ссылка (/maps/-/xxxx) валидна, но id станет известен только
-        // после перехода по редиректу — оставляем id пустым, его вытянет скрапер.
-        $isShort = (bool) preg_match('#/maps/-/[\w-]+#', $path);
-        if ($orgId === null && ! $isShort) {
-            throw new InvalidUrlException('Не удалось определить организацию в ссылке. Нужна ссылка на карточку организации (…/org/…).');
-        }
-
-        // Собираем чистый канонический URL без всякого рекламного мусора в query.
-        $normalized = rtrim(sprintf('%s://%s%s', $parts['scheme'], $host, $path), '/');
-
-        return new self($normalized, $orgId, $slug);
-    }
-
-    private static function hostAllowed(string $host): bool
-    {
-        foreach (self::ALLOWED_HOSTS as $allowed) {
-            if ($host === $allowed || str_ends_with($host, '.'.$allowed)) {
-                return true;
+        $host = strtolower($p['host']);
+        $ok = false;
+        foreach (self::HOSTS as $h) {
+            if ($host === $h || str_ends_with($host, '.'.$h)) {
+                $ok = true;
+                break;
             }
         }
+        if (! $ok || ! str_contains($p['path'], '/maps')) {
+            throw new InvalidArgumentException('Это не ссылка на Яндекс.Карты.');
+        }
 
-        return false;
+        [$id, $slug] = self::extractId($p['path']);
+
+        // Короткие ссылки (/maps/-/xxxx) пропускаем — id узнаем уже после редиректа.
+        $isShort = (bool) preg_match('#/maps/-/[\w-]+#', $p['path']);
+        if ($id === null && ! $isShort) {
+            throw new InvalidArgumentException('Не удалось найти организацию в ссылке (нужна карточка …/org/…).');
+        }
+
+        $scheme = $p['scheme'] ?? 'https';
+        $normalized = rtrim("{$scheme}://{$host}{$p['path']}", '/');
+
+        return new self($normalized, $id, $slug);
     }
 
-    /** @return array{0: ?string, 1: ?string} [orgId, slug] */
-    private static function extractOrgId(string $path): array
+    /** @return array{0: ?string, 1: ?string} [id, slug] */
+    private static function extractId(string $path): array
     {
-        // .../org/<slug>/<цифры>  либо  .../org/<цифры>
         if (preg_match('#/org/([^/]+)/(\d{6,})#', $path, $m)) {
             return [$m[2], $m[1]];
         }
         if (preg_match('#/org/(\d{6,})#', $path, $m)) {
-            return [$m[1], null];
-        }
-        // Запасной вариант: длинный числовой id где-нибудь в пути.
-        if (preg_match('#/(\d{9,})(?:/|$)#', $path, $m)) {
             return [$m[1], null];
         }
 
