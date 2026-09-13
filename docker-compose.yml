@@ -55,7 +55,7 @@ services:
       timeout: 5s
       retries: 20
     ports:
-      - "33061:3306"   # доступ с хоста для отладки (необязательно)
+      - "33061:3306"
 
   redis:
     image: redis:7-alpine
@@ -103,14 +103,13 @@ services:
     depends_on:
       - app
 
-  scraper:
-    build:
-      context: .
-      dockerfile: scraper/Dockerfile
-    environment:
-      PORT: "3000"
-    # Headless-браузеру мало стандартного объёма shared-memory.
-    shm_size: "1gb"
+#  scraper:
+#    build:
+#      context: .
+#      dockerfile: scraper/Dockerfile
+#    environment:
+#      PORT: "3000"
+#    shm_size: "1gb"
 
 volumes:
   mysql-data:
