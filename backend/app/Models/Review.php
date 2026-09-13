@@ -8,13 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Review extends Model
 {
     protected $fillable = [
-        'organization_id',
-        'external_id',
-        'author',
-        'rating',
-        'text',
-        'reviewed_at',
-        'content_hash',
+        'organization_id', 'external_id', 'author', 'rating', 'text', 'reviewed_at',
     ];
 
     protected function casts(): array

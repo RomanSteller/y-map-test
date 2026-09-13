@@ -3,111 +3,97 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\SaveOrganizationRequest;
-use App\Http\Resources\OrganizationResource;
-use App\Http\Resources\SnapshotResource;
-use App\Jobs\ParseOrganizationReviews;
 use App\Models\Organization;
+use App\Services\Yandex\YandexParser;
 use App\Services\Yandex\YandexUrl;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 class OrganizationController extends Controller
 {
-    /** Список подключённых организаций, новые сверху. */
-    public function index(): AnonymousResourceCollection
+    public function __construct(private readonly YandexParser $parser)
     {
-        $organizations = Organization::with('latestSnapshot')
-            ->latest()
-            ->get();
+    }
 
-        return OrganizationResource::collection($organizations);
+    /** Список организаций, новые сверху. */
+    public function index(): JsonResponse
+    {
+        return response()->json(Organization::latest()->get());
+    }
+
+    public function show(Organization $organization): JsonResponse
+    {
+        return response()->json($organization);
     }
 
     /**
-     * Сохраняет ссылку с экрана настроек и запускает парсинг.
+     * Сохраняет ссылку с экрана настроек и сразу собирает данные.
      *
-     * Добавляем только новую организацию: если такая уже есть, отдаём ошибку —
-     * перепарсить существующую можно кнопкой «Обновить» на её странице.
+     * Пока парсим синхронно прямо в запросе: один GET страницы — это быстро.
+     * Для «сети из 50 филиалов» это надо унести в очередь (job на каждую орг),
+     * задел есть, но не доделал — подробно расписал в README.
      */
     public function store(SaveOrganizationRequest $request): JsonResponse
     {
-        $parsed = YandexUrl::parse($request->validated('url'));
+        $url = YandexUrl::parse($request->validated('url'));
+        $key = $url->orgId ?? 'url:'.sha1($url->normalized);
 
-        // У коротких ссылок id ещё нет — такие строки ключуем по нормализованному URL.
-        $yandexId = $parsed->orgId ?? 'url:'.sha1($parsed->normalized);
-
-        // Уже добавляли эту организацию? Не плодим дубли — говорим об этом прямо.
-        $existing = Organization::where('yandex_id', $yandexId)->first();
-        if ($existing !== null) {
+        if (Organization::where('yandex_id', $key)->exists()) {
             throw ValidationException::withMessages([
-                'url' => 'Эта организация уже добавлена — она есть в списке ниже.',
+                'url' => 'Эта организация уже добавлена — она в списке ниже.',
             ]);
         }
 
         $organization = Organization::create([
-            'yandex_id' => $yandexId,
-            'url' => $parsed->normalized,
-            'slug' => $parsed->slug,
-            'parse_status' => Organization::STATUS_QUEUED,
-            'parse_progress' => 0,
+            'yandex_id' => $key,
+            'url' => $url->normalized,
+            'slug' => $url->slug,
         ]);
 
-        ParseOrganizationReviews::dispatch($organization->id);
+        $this->collect($organization);
 
-        return (new OrganizationResource($organization->load('latestSnapshot')))
-            ->response()
-            ->setStatusCode(201);
+        return response()->json($organization->fresh(), 201);
     }
 
-    public function show(Organization $organization): OrganizationResource
-    {
-        return new OrganizationResource($organization->load('latestSnapshot'));
-    }
-
-    /** Перепарсить уже подключённую организацию. */
+    /** Перепарсить уже добавленную организацию. */
     public function parse(Organization $organization): JsonResponse
     {
-        if ($organization->isBusy()) {
-            return response()->json([
-                'message' => 'Парсинг уже выполняется.',
-            ], 409);
+        $this->collect($organization);
+
+        return response()->json($organization->fresh());
+    }
+
+    /** Тянет сводку и первую страницу отзывов, кладёт в БД. */
+    private function collect(Organization $organization): void
+    {
+        try {
+            $data = $this->parser->parse($organization->url);
+
+            $organization->update([
+                'title' => $data['title'],
+                'address' => $data['address'],
+                'rating' => $data['rating'],
+                'ratings_count' => $data['ratings_count'],
+                'reviews_count' => $data['reviews_count'],
+                'parse_error' => null,
+                'last_parsed_at' => now(),
+            ]);
+
+            foreach ($data['reviews'] as $r) {
+                if ($r['external_id'] === '') {
+                    continue;
+                }
+                $organization->reviews()->updateOrCreate(
+                    ['external_id' => $r['external_id']],
+                    ['author' => $r['author'], 'rating' => $r['rating'], 'text' => $r['text'], 'reviewed_at' => $r['reviewed_at']],
+                );
+            }
+        } catch (Throwable $e) {
+            // Причины ошибок пока не типизирую (капча / вёрстка / сеть) — только
+            // сохраняю текст, чтобы показать на фронте. TODO см. README.
+            $organization->update(['parse_error' => $e->getMessage()]);
+            report($e);
         }
-
-        $organization->update([
-            'parse_status' => Organization::STATUS_QUEUED,
-            'parse_progress' => 0,
-            'parse_error' => null,
-            'parse_error_reason' => null,
-        ]);
-
-        ParseOrganizationReviews::dispatch($organization->id);
-
-        return (new OrganizationResource($organization->load('latestSnapshot')))
-            ->response();
-    }
-
-    /** Лёгкий эндпоинт, который интерфейс опрашивает, пока идёт парсинг. */
-    public function status(Organization $organization): JsonResponse
-    {
-        return response()->json([
-            'status' => $organization->parse_status,
-            'progress' => $organization->parse_progress,
-            'is_busy' => $organization->isBusy(),
-            'error_reason' => $organization->parse_error_reason,
-            'error' => $organization->parse_error,
-            'rating' => $organization->rating,
-            'ratings_count' => $organization->ratings_count,
-            'reviews_count' => $organization->reviews_count,
-            'last_parsed_at' => $organization->last_parsed_at?->toIso8601String(),
-        ]);
-    }
-
-    /** Агрегатная история — «было → стало» между парсингами. */
-    public function snapshots(Organization $organization): AnonymousResourceCollection
-    {
-        return SnapshotResource::collection(
-            $organization->snapshots()->latest()->limit(50)->get()
-        );
     }
 }

@@ -2,32 +2,24 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\ReviewResource;
 use App\Models\Organization;
-use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\JsonResponse;
 
 class ReviewController extends Controller
 {
     /**
-     * Отзывы одной организации с пагинацией — по 50 на страницу, как в ТЗ.
+     * Отзывы организации, по 50 на страницу (как в ТЗ).
      *
-     * Отзывы отдаём из своей БД (результат парсинга там закэширован), а не
-     * скрапим заново на каждый переход по странице. Поэтому листание — это
-     * дешёвый запрос по индексу, и фронт переключает страницы мгновенно, не
-     * долбя Яндекс. Почему выбран подход «сначала закэшировать, потом листать» —
-     * расписано в README.
+     * Отдаём из своей БД — результат парсинга там уже лежит, поэтому листание
+     * страниц мгновенное и Яндекс на каждый клик не дёргаем.
      */
-    public function index(Request $request, Organization $organization): AnonymousResourceCollection
+    public function index(Organization $organization): JsonResponse
     {
-        $perPage = (int) config('services.yandex.page_size', 50);
-
         $reviews = $organization->reviews()
             ->orderByDesc('reviewed_at')
             ->orderByDesc('id')
-            ->paginate($perPage)
-            ->withQueryString();
+            ->paginate(50);
 
-        return ReviewResource::collection($reviews);
+        return response()->json($reviews);
     }
 }

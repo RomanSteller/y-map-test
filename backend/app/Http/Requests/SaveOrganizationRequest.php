@@ -2,10 +2,9 @@
 
 namespace App\Http\Requests;
 
-use App\Services\Yandex\Exceptions\InvalidUrlException;
 use App\Services\Yandex\YandexUrl;
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use InvalidArgumentException;
 
 class SaveOrganizationRequest extends FormRequest
 {
@@ -18,15 +17,13 @@ class SaveOrganizationRequest extends FormRequest
     {
         return [
             'url' => [
-                'required',
-                'string',
-                'max:2048',
-                // Вся доменная проверка живёт в одном месте (YandexUrl), а это
-                // правило лишь превращает её исключение в ошибку валидации.
+                'required', 'string', 'max:2048',
+                // Доменную проверку держим в одном месте (YandexUrl), тут только
+                // превращаем её исключение в ошибку валидации поля.
                 function (string $attribute, mixed $value, \Closure $fail): void {
                     try {
                         YandexUrl::parse((string) $value);
-                    } catch (InvalidUrlException $e) {
+                    } catch (InvalidArgumentException $e) {
                         $fail($e->getMessage());
                     }
                 },
