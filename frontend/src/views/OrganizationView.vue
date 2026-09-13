@@ -1,9 +1,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { Bootstrap5Pagination } from 'laravel-vue-pagination'
 import { organizationsApi } from '../api/organizations'
 import StarRating from '../components/StarRating.vue'
 import ReviewCard from '../components/ReviewCard.vue'
-import Pagination from '../components/Pagination.vue'
 
 const props = defineProps({ id: { type: [String, Number], required: true } })
 
@@ -12,17 +12,17 @@ const loading = ref(true)
 const loadError = ref('')
 const reparsing = ref(false)
 
-const reviews = ref([])
+// Весь ответ ленивого пагинатора Laravel (data + current_page/last_page/…) —
+// его целиком принимает <Bootstrap5Pagination> из laravel-vue-pagination.
+const reviews = ref({ data: [] })
 const reviewsLoading = ref(false)
-const page = ref(1)
-const lastPage = ref(1)
 
 const hasError = computed(() => !!org.value?.parse_error)
 
 async function loadOrg() {
   try {
     org.value = await organizationsApi.get(props.id)
-    if (!hasError.value) await loadReviews(1)
+    if (!hasError.value) await loadReviews()
   } catch {
     loadError.value = 'Организация не найдена.'
   } finally {
@@ -30,13 +30,10 @@ async function loadOrg() {
   }
 }
 
-async function loadReviews(p) {
+async function loadReviews(page = 1) {
   reviewsLoading.value = true
   try {
-    const res = await organizationsApi.reviews(props.id, p)
-    reviews.value = res.data
-    page.value = res.current_page
-    lastPage.value = res.last_page
+    reviews.value = await organizationsApi.reviews(props.id, page)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   } finally {
     reviewsLoading.value = false
@@ -47,7 +44,7 @@ async function reparse() {
   reparsing.value = true
   try {
     org.value = await organizationsApi.reparse(props.id)
-    if (!hasError.value) await loadReviews(1)
+    if (!hasError.value) await loadReviews()
   } finally {
     reparsing.value = false
   }
@@ -112,7 +109,9 @@ onMounted(loadOrg)
       <section v-else class="stack">
         <div class="row">
           <h2 style="margin:0">Отзывы</h2>
-          <span class="muted small">{{ reviews.length ? `страница ${page} из ${lastPage}` : '' }}</span>
+          <span v-if="reviews.total" class="muted small">
+            страница {{ reviews.current_page }} из {{ reviews.last_page }}
+          </span>
         </div>
 
         <div v-if="reviewsLoading" class="row muted">
@@ -120,16 +119,21 @@ onMounted(loadOrg)
         </div>
 
         <template v-else>
-          <p v-if="!reviews.length" class="muted">
+          <p v-if="!reviews.data.length" class="muted">
             Отзывов пока нет. Тянем только первую страницу (~50) — полный сбор ещё
             не доделан, см. README.
           </p>
 
           <div v-else class="stack">
-            <ReviewCard v-for="r in reviews" :key="r.id" :review="r" />
+            <ReviewCard v-for="r in reviews.data" :key="r.id" :review="r" />
           </div>
 
-          <Pagination :current-page="page" :last-page="lastPage" @change="loadReviews" />
+          <!-- Пагинация Laravel-пагинатора одной строкой: отдаём ответ как есть -->
+          <Bootstrap5Pagination
+            :data="reviews"
+            :limit="2"
+            @pagination-change-page="loadReviews"
+          />
         </template>
       </section>
     </template>
