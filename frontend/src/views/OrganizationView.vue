@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { organizationsApi } from '../api/organizations'
 import StarRating from '../components/StarRating.vue'
 import ReviewCard from '../components/ReviewCard.vue'
@@ -10,37 +10,19 @@ const props = defineProps({ id: { type: [String, Number], required: true } })
 const org = ref(null)
 const loading = ref(true)
 const loadError = ref('')
+const reparsing = ref(false)
 
 const reviews = ref([])
 const reviewsLoading = ref(false)
 const page = ref(1)
 const lastPage = ref(1)
 
-let pollTimer = null
-
-const errorMessages = {
-  markup_changed: 'Похоже, Яндекс изменил разметку страницы — парсер нужно обновить.',
-  blocked: 'Яндекс временно заблокировал запросы (антибот). Попробуйте позже.',
-  source_unavailable: 'Источник недоступен. Проверьте ссылку или повторите попытку.',
-  empty_result: 'Не удалось получить отзывы, хотя они должны быть.',
-  invalid_url: 'Ссылка на организацию некорректна.',
-}
-
-const isBusy = computed(() => org.value?.parse?.is_busy)
-const isFailed = computed(() => org.value?.parse?.status === 'failed')
-const failureText = computed(() => {
-  const r = org.value?.parse?.error_reason
-  return errorMessages[r] || org.value?.parse?.error || 'Неизвестная ошибка.'
-})
+const hasError = computed(() => !!org.value?.parse_error)
 
 async function loadOrg() {
   try {
     org.value = await organizationsApi.get(props.id)
-    if (isBusy.value) {
-      startPolling()
-    } else if (org.value.parse.status === 'completed') {
-      await loadReviews(1)
-    }
+    if (!hasError.value) await loadReviews(1)
   } catch {
     loadError.value = 'Организация не найдена.'
   } finally {
@@ -53,58 +35,25 @@ async function loadReviews(p) {
   try {
     const res = await organizationsApi.reviews(props.id, p)
     reviews.value = res.data
-    page.value = res.meta.current_page
-    lastPage.value = res.meta.last_page
+    page.value = res.current_page
+    lastPage.value = res.last_page
     window.scrollTo({ top: 0, behavior: 'smooth' })
   } finally {
     reviewsLoading.value = false
   }
 }
 
-function startPolling() {
-  stopPolling()
-  pollTimer = setInterval(async () => {
-    try {
-      const s = await organizationsApi.status(props.id)
-      org.value.parse.status = s.status
-      org.value.parse.progress = s.progress
-      org.value.parse.is_busy = s.is_busy
-      org.value.parse.error_reason = s.error_reason
-      org.value.rating = s.rating
-      org.value.ratings_count = s.ratings_count
-      org.value.reviews_count = s.reviews_count
-
-      if (!s.is_busy) {
-        stopPolling()
-        // Подтягиваем полную запись и первую страницу отзывов.
-        org.value = await organizationsApi.get(props.id)
-        if (s.status === 'completed') await loadReviews(1)
-      }
-    } catch {
-      /* продолжаем опрос — это временный сбой */
-    }
-  }, 1500)
-}
-
-function stopPolling() {
-  if (pollTimer) {
-    clearInterval(pollTimer)
-    pollTimer = null
-  }
-}
-
 async function reparse() {
+  reparsing.value = true
   try {
     org.value = await organizationsApi.reparse(props.id)
-    startPolling()
-  } catch {
-    /* игнорируем: 409 просто значит, что парсинг уже идёт */
-    startPolling()
+    if (!hasError.value) await loadReviews(1)
+  } finally {
+    reparsing.value = false
   }
 }
 
 onMounted(loadOrg)
-onUnmounted(stopPolling)
 </script>
 
 <template>
@@ -118,7 +67,6 @@ onUnmounted(stopPolling)
     <template v-else>
       <RouterLink :to="{ name: 'settings' }" class="small">← К настройкам</RouterLink>
 
-      <!-- Шапка / сводка -->
       <section class="card summary">
         <div class="summary-head">
           <div>
@@ -128,17 +76,13 @@ onUnmounted(stopPolling)
               <a :href="org.url" target="_blank" rel="noopener">Открыть на Яндекс.Картах ↗</a>
             </p>
           </div>
-          <button
-            class="btn btn-secondary"
-            :disabled="isBusy"
-            title="Собрать данные заново"
-            @click="reparse"
-          >
-            {{ isBusy ? 'Идёт сбор…' : 'Обновить' }}
+          <button class="btn btn-secondary" :disabled="reparsing" @click="reparse">
+            <span v-if="reparsing" class="spinner spinner-dark" />
+            {{ reparsing ? 'Собираем…' : 'Обновить' }}
           </button>
         </div>
 
-        <!-- Показатели: рейтинг + два РАЗНЫХ счётчика -->
+        <!-- Рейтинг + два РАЗНЫХ счётчика (оценки ≠ отзывы) -->
         <div v-if="org.rating || org.ratings_count" class="stats">
           <div class="stat">
             <div class="stat-rating">
@@ -158,29 +102,13 @@ onUnmounted(stopPolling)
         </div>
       </section>
 
-      <!-- Живой прогресс парсинга -->
-      <section v-if="isBusy" class="card stack">
-        <div class="row">
-          <span class="spinner spinner-dark" />
-          <strong>Собираем отзывы…</strong>
-          <span class="spacer" />
-          <span class="muted">{{ org.parse.progress }}%</span>
-        </div>
-        <div class="progress"><div :style="{ width: org.parse.progress + '%' }" /></div>
-        <p class="muted small">
-          Данные тянутся в фоне через очередь — можно не ждать на этой странице.
-        </p>
-      </section>
-
-      <!-- Ошибка -->
-      <section v-else-if="isFailed" class="alert alert-error">
+      <section v-if="hasError" class="alert alert-error">
         <div>
           <strong>Не удалось собрать отзывы.</strong>
-          <div class="small">{{ failureText }}</div>
+          <div class="small">{{ org.parse_error }}</div>
         </div>
       </section>
 
-      <!-- Отзывы -->
       <section v-else class="stack">
         <div class="row">
           <h2 style="margin:0">Отзывы</h2>
@@ -192,17 +120,16 @@ onUnmounted(stopPolling)
         </div>
 
         <template v-else>
-          <p v-if="!reviews.length" class="muted">Отзывов пока нет.</p>
+          <p v-if="!reviews.length" class="muted">
+            Отзывов пока нет. Тянем только первую страницу (~50) — полный сбор ещё
+            не доделан, см. README.
+          </p>
 
           <div v-else class="stack">
             <ReviewCard v-for="r in reviews" :key="r.id" :review="r" />
           </div>
 
-          <Pagination
-            :current-page="page"
-            :last-page="lastPage"
-            @change="loadReviews"
-          />
+          <Pagination :current-page="page" :last-page="lastPage" @change="loadReviews" />
         </template>
       </section>
     </template>

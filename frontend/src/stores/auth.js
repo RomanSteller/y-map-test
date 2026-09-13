@@ -8,7 +8,6 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isAuthenticated = computed(() => user.value !== null)
 
-  /** Восстанавливаем сессию при старте приложения (перезагрузка не теряет куку). */
   async function fetchUser() {
     try {
       const { data } = await http.get('/api/user')

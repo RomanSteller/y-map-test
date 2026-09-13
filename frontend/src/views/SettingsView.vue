@@ -32,29 +32,20 @@ async function save() {
   fieldError.value = ''
   generalError.value = ''
   try {
+    // Сбор идёт синхронно (один GET страницы) — поэтому просто ждём и уходим
+    // на страницу организации с уже готовыми отзывами.
     const org = await organizationsApi.save(url.value)
-    // Сразу уходим на страницу организации — там виден живой прогресс парсинга.
     router.push({ name: 'organization', params: { id: org.id } })
   } catch (e) {
     if (e.response?.status === 422) {
       fieldError.value =
-        e.response.data?.errors?.url?.[0] ||
-        e.response.data?.message ||
-        'Некорректная ссылка.'
+        e.response.data?.errors?.url?.[0] || e.response.data?.message || 'Некорректная ссылка.'
     } else {
       generalError.value = 'Ошибка сохранения. Попробуйте ещё раз.'
     }
   } finally {
     saving.value = false
   }
-}
-
-const statusLabels = {
-  pending: 'Ожидает',
-  queued: 'В очереди',
-  parsing: 'Парсится',
-  completed: 'Готово',
-  failed: 'Ошибка',
 }
 </script>
 
@@ -64,7 +55,7 @@ const statusLabels = {
       <div>
         <h1>Настройки</h1>
         <p class="muted small">
-          Вставьте ссылку на карточку организации в Яндекс.Картах — мы соберём её
+          Вставьте ссылку на карточку организации в Яндекс.Картах — соберём её
           отзывы, рейтинг и счётчики.
         </p>
       </div>
@@ -85,7 +76,7 @@ const statusLabels = {
         <div class="row">
           <button class="btn" type="submit" :disabled="saving || !url">
             <span v-if="saving" class="spinner" />
-            {{ saving ? 'Сохраняем…' : 'Сохранить и собрать отзывы' }}
+            {{ saving ? 'Собираем отзывы…' : 'Сохранить и собрать отзывы' }}
           </button>
         </div>
 
@@ -117,9 +108,7 @@ const statusLabels = {
             <StarRating :value="org.rating" :size="14" />
             <span class="rating-num">{{ org.rating?.toFixed(1) }}</span>
           </template>
-          <span class="badge" :class="`badge-${org.parse.status}`">
-            {{ statusLabels[org.parse.status] || org.parse.status }}
-          </span>
+          <span v-if="org.parse_error" class="badge badge-failed">ошибка</span>
         </div>
       </RouterLink>
     </section>
@@ -146,12 +135,9 @@ input.invalid { border-color: var(--danger); }
   text-transform: uppercase;
   letter-spacing: 0.04em;
   padding: 4px 10px;
-  border-radius: 0;
   background: #eceef0;
   color: var(--muted);
   white-space: nowrap;
 }
-.badge-completed { background: #e5f6ec; color: var(--success); }
 .badge-failed { background: #fdecee; color: var(--danger); }
-.badge-parsing, .badge-queued { background: #d8fbf8; color: #087b73; }
 </style>
